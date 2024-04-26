@@ -1,0 +1,256 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © F0LL0W_THE_TREND
+
+//@version=5
+indicator("Dashboard", overlay=true, scale=scale.none, max_lines_count=500)
+//Start dashboard
+import jdehorty/EconomicCalendar/1 as calendar
+
+// ---- Table Settings Start ----//
+max    = 160    //Maximum Length
+min    = 10     //Minimum Length
+
+
+// Input setting page start
+dash_loc    = input.session("Bottom Right","Dashboard Posision"  ,["Top Right","Bottom Right","Top Left","Bottom Left", "Middle Right","Bottom Center"], group='Style Settings')
+text_size   = input.session('Small',"Dashboard Size"  ,options=["Tiny","Small","Normal","Large"]  ,group='Style Settings')
+cell_up     = input.color(color.green,'Up Cell Color'  ,group='Style Settings')
+cell_dn     = input.color(color.red,'Down Cell Color'  ,group='Style Settings')
+cell_Neut   = input.color(color.gray,'Nochange  Cell Color'  ,group='Style Settings')
+row_col     = color.blue
+col_col     = color.white
+txt_col     = color.white
+cell_transp = input.int(60,'Cell Transparency'  ,minval=0  ,maxval=100  ,group='Style Settings')
+
+Header_col  = color.rgb(35, 94, 255)
+
+//Momentum color
+cell_phase1 = input.color(#00ff1f,'Phase1:Uptrend',    group='Momentum')
+cell_phase2 = input.color(color.teal,'Phase2:Pullback Uptrend'  ,        group='Momentum')
+cell_phase3 = input.color(color.green,'Phase3:Re-Accumulation' ,          group='Momentum')
+cell_phase4 = input.color(#ff00ff,'Phase4:Downtrend'  ,    group='Momentum')
+cell_phase5 = input.color(color.orange,'Phase5:Pullback Downtrend'  ,      group='Momentum')
+cell_phase6 = input.color(color.red,'Phase6:Re-Distribution'  ,      group='Momentum')
+// ---- Table Settings End ----}//
+
+// ---- Indicators Show/Hide Settings Start ----//
+
+showMA01    = input.bool(defval=true, title="Show MA01",            group="Colum On/Off")
+showMA02    = input.bool(defval=true, title="Show MA02",            group="Colum On/Off")
+showmomentum = input.bool(defval=true, title="Show Momentum",       group="Colum On/Off")
+
+
+// ---- Indicators Show/Hide Settings end ----}//
+
+
+// ==================
+// ==== Settings ====
+// ==================
+
+
+//------Seting Color Calender Economi------
+
+color1 = color.red
+color2 = color.orange
+color3 = color.yellow
+color4 = color.lime
+color5 = color.aqua
+color6 = color.fuchsia
+color7 = color.silver
+
+
+show_fomc_meetings = input.bool(defval = false, title = "📅 FOMC", inline = "FOMC", group="⚙️ Settings", tooltip="The FOMC meets eight times a year to determine the course of monetary policy. The FOMC's decisions are announced in a press release at 2:15 p.m. ET on the day of the meeting. The press release is followed by a press conference at 2:30 p.m. ET. The FOMC's decisions are based on a review of economic and financial developments and its assessment of the likely effects of these developments on the economic outlook.")
+c_fomcMeeting = input.color(color.new(color1, 50), title = "Color", group="⚙️ Settings", inline = "FOMC")
+
+show_fomc_minutes = input.bool(defval = false, title = "📅 FOMC Minutes", inline = "FOMCMinutes", group="⚙️ Settings", tooltip="The FOMC minutes are released three weeks after each FOMC meeting. The minutes provide a detailed account of the FOMC's discussion of economic and financial developments and its assessment of the likely effects of these developments on the economic outlook.")
+c_fomcMinutes = input.color(color.new(color2, 50), title = "Color", group="⚙️ Settings", inline = "FOMCMinutes")
+
+show_ppi = input.bool(defval = false, title = "📅 Producer Price Index (PPI)", inline = "PPI", group="⚙️ Settings", tooltip="The Producer Price Index (PPI) measures changes in the price level of goods and services sold by domestic producers. The PPI is a weighted average of prices of a basket of goods and services, such as transportation, food, and medical care. The PPI is a leading indicator of CPI.")
+c_ppi = input.color(color.new(color3, 50), title = "Color", group="⚙️ Settings", inline = "PPI")
+
+show_cpi = input.bool(defval = false, title = "📅 Consumer Price Index (CPI)", inline = "CPI", group="⚙️ Settings", tooltip="The Consumer Price Index (CPI) measures changes in the price level of goods and services purchased by households. The CPI is a weighted average of prices of a basket of consumer goods and services, such as transportation, food, and medical care. The CPI-U is the most widely used measure of inflation. The CPI-U is based on a sample of about 87,000 households and measures the change in the cost of a fixed market basket of goods and services purchased by urban consumers.")
+c_cpi = input.color(color.new(color4, 50), title = "Color", group="⚙️ Settings", inline = "CPI")
+
+show_csi = input.bool(defval = false, title = "📅 Consumer Sentiment Index (CSI)", inline = "CSI", group="⚙️ Settings", tooltip="The University of Michigan's Consumer Sentiment Index (CSI) is a measure of consumer attitudes about the economy. The CSI is based on a monthly survey of 500 U.S. households. The index is based on consumers' assessment of present and future economic conditions. The CSI is a leading indicator of consumer spending, which accounts for about two-thirds of U.S. economic activity.")
+c_csi = input.color(color.new(color5, 50), title = "Color", group="⚙️ Settings", inline = "CSI")
+
+show_cci = input.bool(defval = false, title = "📅 Consumer Confidence Index (CCI)", inline = "CCI", group="⚙️ Settings", tooltip="The Conference Board's Consumer Confidence Index (CCI) is a measure of consumer attitudes about the economy. The CCI is based on a monthly survey of 5,000 U.S. households. The index is based on consumers' assessment of present and future economic conditions. The CCI is a leading indicator of consumer spending, which accounts for about two-thirds of U.S. economic activity.")
+c_cci = input.color(color.new(color6, 50), title = "Color", group="⚙️ Settings", inline = "CCI")
+
+show_nfp = input.bool(defval = false, title = "📅 Non-Farm Payroll (NFP)", inline = "NFP", group="⚙️ Settings", tooltip="The Non-Farm Payroll (NFP) is a measure of the change in the number of employed persons, excluding farm workers and government employees. The NFP is a leading indicator of consumer spending, which accounts for about two-thirds of U.S. economic activity.")
+c_nfp = input.color(color.new(color7, 50), title = "Color", group="⚙️ Settings", inline = "NFP")
+
+show_legend = input.bool(false, "Show Legend", group="⚙️ Settings", inline = "Legend", tooltip="Show the color legend for the economic calendar events.")
+
+
+// =======================
+// ==== Dates & Times ====
+// =======================
+
+getUnixTime(_eventArr, _index) => 
+    switch 
+        timeframe.isdaily => array.get(_eventArr, _index) - timeframe.multiplier*86400000 // -n day(s)
+        timeframe.isweekly => array.get(_eventArr, _index) - timeframe.multiplier*604800000 // -n week(s)
+        timeframe.ismonthly => array.get(_eventArr, _index) - timeframe.multiplier*2592000000 // -n month(s)
+        timeframe.isminutes and timeframe.multiplier > 59 => array.get(_eventArr, _index) - timeframe.multiplier*60000 // -n minute(s)
+        => array.get(_eventArr, _index)
+
+if barstate.islastconfirmedhistory
+
+    // Note: An offset of -n units is needed to realign events with the timeframe in which they occurred
+    if show_fomc_meetings
+        fomcMeetingsArr = calendar.fomcMeetings()
+        for i = 0 to array.size(fomcMeetingsArr) - 1
+            unixTime = getUnixTime(fomcMeetingsArr, i)
+            line.new(x1=unixTime, y1=high, x2=unixTime, y2=low, extend=extend.both,color=c_fomcMeeting, width=2, xloc=xloc.bar_time)
+
+    if show_fomc_minutes
+        fomcMinutesArr = calendar.fomcMinutes()
+        for i = 0 to array.size(fomcMinutesArr) - 1
+            unixTime = getUnixTime(fomcMinutesArr, i)
+            line.new(x1=unixTime, y1=high, x2=unixTime, y2=low, extend=extend.both,color=c_fomcMinutes, width=2, xloc=xloc.bar_time)
+
+    if show_ppi
+        ppiArr = calendar.ppiReleases()
+        for i = 0 to array.size(ppiArr) - 1
+            unixTime = getUnixTime(ppiArr, i)
+            line.new(x1=unixTime, y1=high, x2=unixTime, y2=low, extend=extend.both,color=c_ppi, width=2, xloc=xloc.bar_time)
+
+    if show_cpi
+        cpiArr = calendar.cpiReleases()
+        for i = 0 to array.size(cpiArr) - 1
+            unixTime = getUnixTime(cpiArr, i)
+            line.new(x1=unixTime, y1=high, x2=unixTime, y2=low, extend=extend.both,color=c_cpi, width=2, xloc=xloc.bar_time)
+    
+    if show_csi
+        csiArr = calendar.csiReleases()
+        for i = 0 to array.size(csiArr) - 1
+            unixTime = getUnixTime(csiArr, i)
+            line.new(x1=unixTime, y1=high, x2=unixTime, y2=low, extend=extend.both,color=c_csi, width=2, xloc=xloc.bar_time)
+    
+    if show_cci
+        cciArr = calendar.cciReleases()
+        for i = 0 to array.size(cciArr) - 1
+            unixTime = getUnixTime(cciArr, i)
+            line.new(x1=unixTime, y1=high, x2=unixTime, y2=low, extend=extend.both,color=c_cci, width=2, xloc=xloc.bar_time)
+    
+    if show_nfp
+        nfpArr = calendar.nfpReleases()
+        for i = 0 to array.size(nfpArr) - 1
+            unixTime = getUnixTime(nfpArr, i)
+            line.new(x1=unixTime, y1=high, x2=unixTime, y2=low, extend=extend.both,color=c_nfp, width=2, xloc=xloc.bar_time)
+
+// ================
+// ==== Legend ====
+// ================
+if show_legend
+    var tbl = table.new(position.top_right, columns=8, rows=8, frame_color=#151715, frame_width=1, border_width=2, border_color=color.new(color.black, 100))
+    units = timeframe.isminutes ? "m" : ""
+    table.cell(tbl, 1, 0, syminfo.ticker + ' => ' + str.tostring(timeframe.period)+ units, text_halign=text.align_center, text_color=color.gray, text_size=size.small)
+    table.cell(tbl, 2, 0, 'FOMC Meeting', text_halign=text.align_center, bgcolor=color.black, text_color=color1, text_size=size.small)
+    table.cell(tbl, 3, 0, 'FOMC Minutes', text_halign=text.align_center, bgcolor=color.black, text_color=color2, text_size=size.small)
+    table.cell(tbl, 4, 0, 'Producer Price Index (PPI)', text_halign=text.align_center, bgcolor=color.black, text_color=color3, text_size=size.small)
+    table.cell(tbl, 1, 1, 'Consumer Price Index (CPI)', text_halign=text.align_center, bgcolor=color.black, text_color=color4, text_size=size.small)
+    table.cell(tbl, 2, 1, 'Consumer Sentiment Index (CSI)', text_halign=text.align_center, bgcolor=color.black, text_color=color5, text_size=size.small)
+    table.cell(tbl, 3, 1, 'Consumer Confidence Index (CCI)', text_halign=text.align_center, bgcolor=color.black, text_color=color6, text_size=size.small)
+    table.cell(tbl, 4, 1, 'Non-Farm Payrolls (NFP)', text_halign=text.align_center, bgcolor=color.black, text_color=color7, text_size=size.small)
+
+// =======================
+// ==== CE And ===========
+// =======================
+
+//---- EMA 1 code start----//
+length_MA1 = input.int(title="MA1",defval=21, minval=1)
+MA1        = ta.ema(close, length_MA1)
+//plot(MA01, color=color.red, title="MA1")
+//---- EMA 1  code end ----//
+
+//---- EMA 2 code start---//
+length_MA2 = input.int(title="MA2",defval=105, minval=1)
+MA2        = ta.ema(close, length_MA2)
+//plot(MA02, color=color.blue, title="MA2")
+
+// ---- Timeframe Row Show/Hide Settings Start ----//
+showTF1 = input.bool(defval=true, title="Show TF MN", inline='indicator1',group="Rows Settings")
+
+f_MACDV(_close) =>
+
+    //---- Indicators code Start ----//
+    CLS= _close
+
+   
+    stringMA1 = CLS>MA1 ? "Up" : "Down"
+    stringMA2 = CLS>MA2 ?  "Up" : "Down"
+    stringmomentum  =(CLS>MA1 and CLS>MA2 and MA1>MA2) ? "Strong Bullish" :(CLS<MA1 and CLS>MA2 and MA1>MA2) ? "Re-Acumulation":(CLS<MA1 and CLS<CLS[1] and CLS[1]< MA2[1] and MA1>MA2) ? "Bearish":(CLS<MA1 and CLS<MA2 and MA1<MA2) ? "Strong Bearish":(CLS>MA1 and CLS<MA2 and MA1<MA2) ? "Re-Distribution":(CLS>MA1 and CLS>CLS[1] and CLS[1]>MA2[1] and MA1<MA2) ? "Bullish":na
+        
+    //-----Condition end
+
+    // Return values
+    [stringMA1,stringMA2,stringmomentum]
+
+// ] -------- Alerts ----------------- [
+
+
+//---- Table Position & Size code start {----//
+var table_position = dash_loc == 'Bottom Right' ? position.bottom_right :
+  dash_loc == 'Bottom Left' ? position.bottom_left :
+  dash_loc == 'Middle Right' ? position.middle_right :
+  dash_loc == 'Bottom Center' ? position.bottom_center :
+  dash_loc == 'Top Left' ? position.top_left : position.top_right
+  
+var table_text_size = text_size == 'Normal' ? size.normal :
+  text_size == 'Tiny' ? size.tiny :
+  text_size == 'Small' ? size.small :
+  text_size == 'Normal' ? size.normal : size.large
+
+var t = table.new(table_position,15,math.abs(max-min)+2,
+  frame_color   =color.new(#f1ff2a, 0),
+  frame_width   =1,
+  border_color  =color.new(#f1ff2a,0),
+  border_width  =1)
+//---- Table Position & Size code end ----//
+
+// get values for table
+
+[stringMA1,stringMA2,stringmomentum] = f_MACDV(close)
+[stringMA1_4H,stringMA2_4H,stringmomentum_4H] = request.security(syminfo.tickerid, "240", f_MACDV(close), lookahead=barmerge.lookahead_on)
+[stringMA1_D,stringMA2_D,stringmomentum_D] = request.security(syminfo.tickerid, "D", f_MACDV(close), lookahead=barmerge.lookahead_on)
+[stringMA1_W,stringMA2_W,stringmomentum_W] = request.security(syminfo.tickerid, "W", f_MACDV(close), lookahead=barmerge.lookahead_on)
+//---- Table Column & Rows code start ----//
+if (barstate.islast)
+    //---- Table Main Column Headers code start ----//
+    table.cell(t,1,1,'TimeFrame',text_color=col_col,text_size=table_text_size,bgcolor=Header_col)
+    if showMA01
+        table.cell(t,2,1,'MA01',text_color=col_col,text_size=table_text_size,bgcolor=Header_col)
+    if showMA02
+        table.cell(t,3,1,'MA02',text_color=col_col,text_size=table_text_size,bgcolor=Header_col)
+    if showmomentum
+        table.cell(t,4,1,'Trend',text_color=col_col,text_size=table_text_size,bgcolor=Header_col)
+
+    //---- Table Main Column Headers code end ----//
+ 
+    //---- Display data code start ----//
+
+    //---------------------- Chart period ----------------------------------
+
+    table.cell(t,1,2, "Chart",text_color=color.white,text_size=table_text_size, bgcolor=color.rgb(0, 68, 255))
+   
+    if  showMA01
+        table.cell(t,2,2, stringMA1,text_color=color.new(close > MA1 ? cell_up : cell_dn ,0),text_size=table_text_size, bgcolor=color.new(close > MA1  ? cell_up : cell_dn ,cell_transp))
+    if  showMA02
+        table.cell(t,3,2, stringMA2,text_color=color.new(close > MA2 ? cell_up : cell_dn ,0),text_size=table_text_size, bgcolor=color.new(close > MA2 ? cell_up : cell_dn ,cell_transp))
+    
+    if  showmomentum
+        table.cell(t,4,2,stringmomentum,text_color=color.rgb(2, 2, 2),text_size=table_text_size, bgcolor=color.new(close>MA1 and close>MA2 and MA1 > MA2 ? cell_phase1 : (close<MA1  and close>MA2  and MA1 >MA2 ) ? cell_phase2 : (close<MA1 and close<MA2 and MA1 > MA2 ) ?cell_phase3 :(close < MA1  and close < MA2  and MA1 < MA2 ) ? cell_phase4:(close > MA1  and close <MA2  and MA1 <MA2 ) ? cell_phase5:(close > MA1 and close  > MA2  and MA1 <MA2 ) ? cell_phase6:col_col,cell_transp))
+
+ //   alert("\nRSI =(" + str.tostring(CLS_chart, '#.###') + ")\n Momentum = (" + str.tostring(stringmomentum_chart) +  ")\n Trend =("+ str.tostring(MA1_chart > MA2_chart ? "Bullish" : "Bearish")+").", alert.freq_once_per_bar_close)
+       
+
+
+
+//---- Display data code end ----//
+//End dahs board
+
+
+
+
