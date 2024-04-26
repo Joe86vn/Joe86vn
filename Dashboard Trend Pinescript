@@ -26,11 +26,11 @@ Header_col  = color.rgb(35, 94, 255)
 
 //Momentum color
 cell_phase1 = input.color(#00ff1f,'Phase1:Uptrend',    group='Momentum')
-cell_phase2 = input.color(color.teal,'Phase2:Pullback Uptrend'  ,        group='Momentum')
-cell_phase3 = input.color(color.green,'Phase3:Re-Accumulation' ,          group='Momentum')
+cell_phase2 = input.color(color.green,'Phase2: Re-Accumulation' ,        group='Momentum')
+cell_phase3 = input.color(color.red,'Phase3: Downtrend' ,          group='Momentum')
 cell_phase4 = input.color(#ff00ff,'Phase4:Downtrend'  ,    group='Momentum')
-cell_phase5 = input.color(color.orange,'Phase5:Pullback Downtrend'  ,      group='Momentum')
-cell_phase6 = input.color(color.red,'Phase6:Re-Distribution'  ,      group='Momentum')
+cell_phase5 = input.color(color.orange,'Phase5:Re-Distribution'  ,      group='Momentum')
+cell_phase6 = input.color(color.teal,'Phase6:Uptrend'  ,      group='Momentum')
 // ---- Table Settings End ----}//
 
 // ---- Indicators Show/Hide Settings Start ----//
@@ -38,7 +38,7 @@ cell_phase6 = input.color(color.red,'Phase6:Re-Distribution'  ,      group='Mome
 showMA01    = input.bool(defval=true, title="Show MA01",            group="Colum On/Off")
 showMA02    = input.bool(defval=true, title="Show MA02",            group="Colum On/Off")
 showmomentum = input.bool(defval=true, title="Show Momentum",       group="Colum On/Off")
-
+showaction = input.bool(defval=true, title="Show Action",       group="Colum On/Off")
 
 // ---- Indicators Show/Hide Settings end ----}//
 
@@ -159,16 +159,6 @@ if show_legend
 // ==== CE And ===========
 // =======================
 
-//---- EMA 1 code start----//
-length_MA1 = input.int(title="MA1",defval=21, minval=1)
-MA1        = ta.ema(close, length_MA1)
-//plot(MA01, color=color.red, title="MA1")
-//---- EMA 1  code end ----//
-
-//---- EMA 2 code start---//
-length_MA2 = input.int(title="MA2",defval=105, minval=1)
-MA2        = ta.ema(close, length_MA2)
-//plot(MA02, color=color.blue, title="MA2")
 
 // ---- Timeframe Row Show/Hide Settings Start ----//
 showTF1 = input.bool(defval=true, title="Show TF MN", inline='indicator1',group="Rows Settings")
@@ -177,16 +167,26 @@ f_MACDV(_close) =>
 
     //---- Indicators code Start ----//
     CLS= _close
+    
+    //---- EMA 1 code start----//
+    length_MA1 = input.int(title="MA1",defval=21, minval=1)
+    MA1        = ta.ema(CLS, length_MA1)
+    //plot(MA01, color=color.red, title="MA1")
+    //---- EMA 1  code end ----//
 
+    //---- EMA 2 code start---//
+    length_MA2 = input.int(title="MA2",defval=105, minval=1)
+    MA2        = ta.ema(CLS, length_MA2)
+    //plot(MA02, color=color.blue, title="MA2")
    
     stringMA1 = CLS>MA1 ? "Up" : "Down"
     stringMA2 = CLS>MA2 ?  "Up" : "Down"
-    stringmomentum  =(CLS>MA1 and CLS>MA2 and MA1>MA2) ? "Strong Bullish" :(CLS<MA1 and CLS>MA2 and MA1>MA2) ? "Re-Acumulation":(CLS<MA1 and CLS<CLS[1] and CLS[1]< MA2[1] and MA1>MA2) ? "Bearish":(CLS<MA1 and CLS<MA2 and MA1<MA2) ? "Strong Bearish":(CLS>MA1 and CLS<MA2 and MA1<MA2) ? "Re-Distribution":(CLS>MA1 and CLS>CLS[1] and CLS[1]>MA2[1] and MA1<MA2) ? "Bullish":na
+    stringmomentum  =(CLS>MA1 and CLS>MA2 and MA1>MA2) ? "Uptrend" :(CLS<MA1 and CLS > MA2 and MA1>MA2) ? "Re-Acc":(CLS<MA1 and  CLS < MA2 and MA1>MA2) ? "Downtrend":(CLS<MA1 and CLS<MA2 and MA1<MA2) ? "Downtrend": (CLS>MA1 and CLS < MA2 and MA1<MA2) ? "Re-Dis":(CLS>MA1 and CLS > MA2 and MA1<MA2) ? "Uptrend":na
         
     //-----Condition end
 
     // Return values
-    [stringMA1,stringMA2,stringmomentum]
+    [CLS,MA1,MA2,stringMA1,stringMA2,stringmomentum]
 
 // ] -------- Alerts ----------------- [
 
@@ -211,11 +211,10 @@ var t = table.new(table_position,15,math.abs(max-min)+2,
 //---- Table Position & Size code end ----//
 
 // get values for table
-
-[stringMA1,stringMA2,stringmomentum] = f_MACDV(close)
-[stringMA1_4H,stringMA2_4H,stringmomentum_4H] = request.security(syminfo.tickerid, "240", f_MACDV(close), lookahead=barmerge.lookahead_on)
-[stringMA1_D,stringMA2_D,stringmomentum_D] = request.security(syminfo.tickerid, "D", f_MACDV(close), lookahead=barmerge.lookahead_on)
-[stringMA1_W,stringMA2_W,stringmomentum_W] = request.security(syminfo.tickerid, "W", f_MACDV(close), lookahead=barmerge.lookahead_on)
+[close_,MA1_,MA2_,stringMA1,stringMA2,stringmomentum] = f_MACDV(close)
+[close_4H,MA1_4H,MA2_4H,stringMA1_4H,stringMA2_4H,stringmomentum_4H] = request.security(syminfo.tickerid, "240", f_MACDV(close), lookahead=barmerge.lookahead_off)
+[close_D,MA1_D,MA2_D,stringMA1_D,stringMA2_D,stringmomentum_D] = request.security(syminfo.tickerid, "1D", f_MACDV(close), lookahead=barmerge.lookahead_off)
+[close_W,MA1_W,MA2_W,stringMA1_W,stringMA2_W,stringmomentum_W] = request.security(syminfo.tickerid, "1W", f_MACDV(close), lookahead=barmerge.lookahead_off)
 //---- Table Column & Rows code start ----//
 if (barstate.islast)
     //---- Table Main Column Headers code start ----//
@@ -226,28 +225,48 @@ if (barstate.islast)
         table.cell(t,3,1,'MA02',text_color=col_col,text_size=table_text_size,bgcolor=Header_col)
     if showmomentum
         table.cell(t,4,1,'Trend',text_color=col_col,text_size=table_text_size,bgcolor=Header_col)
-
+    
     //---- Table Main Column Headers code end ----//
  
     //---- Display data code start ----//
 
     //---------------------- Chart period ----------------------------------
 
-    table.cell(t,1,2, "Chart",text_color=color.white,text_size=table_text_size, bgcolor=color.rgb(0, 68, 255))
+    table.cell(t,1,2, "WEEKLY",text_color=color.white,text_size=table_text_size, bgcolor=color.rgb(0, 68, 255))
    
     if  showMA01
-        table.cell(t,2,2, stringMA1,text_color=color.new(close > MA1 ? cell_up : cell_dn ,0),text_size=table_text_size, bgcolor=color.new(close > MA1  ? cell_up : cell_dn ,cell_transp))
+        table.cell(t,2,2, stringMA1_W,text_color=color.new(close_W > MA1_W ? cell_up : cell_dn ,0),text_size=table_text_size, bgcolor=color.new(close_W > MA1_W  ? cell_up : cell_dn ,cell_transp))
     if  showMA02
-        table.cell(t,3,2, stringMA2,text_color=color.new(close > MA2 ? cell_up : cell_dn ,0),text_size=table_text_size, bgcolor=color.new(close > MA2 ? cell_up : cell_dn ,cell_transp))
+        table.cell(t,3,2, stringMA2_W,text_color=color.new(close_W > MA2_W ? cell_up : cell_dn ,0),text_size=table_text_size, bgcolor=color.new(close_W > MA2_W ? cell_up : cell_dn ,cell_transp))
     
     if  showmomentum
-        table.cell(t,4,2,stringmomentum,text_color=color.rgb(2, 2, 2),text_size=table_text_size, bgcolor=color.new(close>MA1 and close>MA2 and MA1 > MA2 ? cell_phase1 : (close<MA1  and close>MA2  and MA1 >MA2 ) ? cell_phase2 : (close<MA1 and close<MA2 and MA1 > MA2 ) ?cell_phase3 :(close < MA1  and close < MA2  and MA1 < MA2 ) ? cell_phase4:(close > MA1  and close <MA2  and MA1 <MA2 ) ? cell_phase5:(close > MA1 and close  > MA2  and MA1 <MA2 ) ? cell_phase6:col_col,cell_transp))
+        table.cell(t,4,2,stringmomentum_W,text_color=color.rgb(2, 2, 2),text_size=table_text_size, bgcolor=color.new(close_W>MA1_W and close_W>MA2_W and MA1_W > MA2_W ? cell_phase1 : (close_W<MA1_W  and close_W>MA2_W  and MA1_W >MA2_W ) ? cell_phase2 : (close_W<MA1_W and close_W<MA2_W and MA1_W > MA2_W ) ?cell_phase3 :(close_W < MA1_W  and close_W < MA2_W  and MA1_W < MA2_W ) ? cell_phase4:(close_W > MA1_W  and close_W <MA2_W  and MA1_W <MA2_W ) ? cell_phase5:(close_W > MA1_W and close_W  > MA2_W  and MA1_W <MA2_W ) ? cell_phase6:col_col,cell_transp))
 
- //   alert("\nRSI =(" + str.tostring(CLS_chart, '#.###') + ")\n Momentum = (" + str.tostring(stringmomentum_chart) +  ")\n Trend =("+ str.tostring(MA1_chart > MA2_chart ? "Bullish" : "Bearish")+").", alert.freq_once_per_bar_close)
-       
+    
+    table.cell(t,1,3, "DAILY",text_color=color.white,text_size=table_text_size, bgcolor=color.rgb(0, 68, 255))
+   
+    if  showMA01
+        table.cell(t,2,3, stringMA1_D,text_color=color.new(close_D > MA1_D ? cell_up : cell_dn ,0),text_size=table_text_size, bgcolor=color.new(close_D > MA1_D  ? cell_up : cell_dn ,cell_transp))
+    if  showMA02
+        table.cell(t,3,3, stringMA2_D,text_color=color.new(close_D > MA2_D ? cell_up : cell_dn ,0),text_size=table_text_size, bgcolor=color.new(close_D > MA2_D ? cell_up : cell_dn ,cell_transp))
+    
+    if  showmomentum
+        table.cell(t,4,3,stringmomentum_D,text_color=color.rgb(2, 2, 2),text_size=table_text_size, bgcolor=color.new(close_D>MA1_D and close_D>MA2_D and MA1_D > MA2_D ? cell_phase1 : (close_D<MA1_D  and close_D>MA2_D  and MA1_D >MA2_D ) ? cell_phase2 : (close_D<MA1_D and close_D<MA2_D and MA1_D > MA2_D ) ?cell_phase3 :(close_D < MA1_D  and close_D < MA2_D  and MA1_D < MA2_D ) ? cell_phase4:(close_D > MA1_D  and close_D <MA2_D  and MA1_D <MA2_D ) ? cell_phase5:(close_D > MA1_D and close_D  > MA2_D  and MA1_D <MA2_D ) ? cell_phase6:col_col,cell_transp))
 
+    table.cell(t,1,4, "4H",text_color=color.white,text_size=table_text_size, bgcolor=color.rgb(0, 68, 255))
+   
+    if  showMA01
+        table.cell(t,2,4, stringMA1_4H,text_color=color.new(close_4H > MA1_4H ? cell_up : cell_dn ,0),text_size=table_text_size, bgcolor=color.new(close_4H > MA1_4H  ? cell_up : cell_dn ,cell_transp))
+    if  showMA02
+        table.cell(t,3,4, stringMA2_4H,text_color=color.new(close_4H > MA2_4H ? cell_up : cell_dn ,0),text_size=table_text_size, bgcolor=color.new(close_4H > MA2_4H ? cell_up : cell_dn ,cell_transp))
+    
+    if  showmomentum
+        table.cell(t,4,4,stringmomentum_4H,text_color=color.rgb(2, 2, 2),text_size=table_text_size, bgcolor=color.new(close_4H>MA1_4H and close_4H>MA2_4H and MA1_4H > MA2_4H ? cell_phase1 : (close_4H<MA1_4H  and close_4H>MA2_4H  and MA1_4H >MA2_4H ) ? cell_phase2 : (close_4H<MA1_4H and close_4H<MA2_4H and MA1_4H > MA2_4H ) ?cell_phase3 :(close_4H < MA1_4H  and close_4H < MA2_4H  and MA1_4H < MA2_4H ) ? cell_phase4:(close_4H > MA1_4H  and close_4H <MA2_4H  and MA1_4H <MA2_4H ) ? cell_phase5:(close_4H > MA1_4H and close_4H  > MA2_4H  and MA1_4H <MA2_4H ) ? cell_phase6:col_col,cell_transp))
 
-
+    table.cell(t,1,5, "Action",text_color=color.white,text_size=table_text_size, bgcolor=color.rgb(0, 68, 255))
+    if showaction
+        table.cell(t,2,5,(stringmomentum_W == "Uptrend" and stringmomentum_D == "Uptrend" and stringmomentum_4H == "Uptrend") ? "Wait to Buy After Pullback from 4H  Re-Acc Base": (stringmomentum_W == "Uptrend" and stringmomentum_D == "Uptrend" and stringmomentum_4H == "Re-Acc") ? "Buy Breakout": (stringmomentum_W == "Uptrend" and stringmomentum_D == "Re-Acc" and stringmomentum_4H == "Downtrend") ? "Wait to Buy After setup 4H Accumulation Base ":  (stringmomentum_W == "Re-Acc" and stringmomentum_D == "Downtrend" and stringmomentum_4H == "Re-Dis") ? "Sell Breakdown":  (stringmomentum_W == "Re-Acc" and stringmomentum_D == "Downtrend" and stringmomentum_4H == "Downtrend") ? "Wait to Sell After pullback from Re-Dis Base 4H " : (stringmomentum_W == "Re-Acc" and stringmomentum_D == "Re-Dis" and stringmomentum_4H == "Uptrend") ? "Wait to Buy After setup Re-Acc Base 4H ":  (stringmomentum_W == "Downtrend" and stringmomentum_D == "Re-Dis" and stringmomentum_4H == "Uptrend") ? "Wait to Sell After setup 4H Re-Dis Base" :  (stringmomentum_W == "Downtrend" and stringmomentum_D == "Re-Dis" and stringmomentum_4H == "Re-Dis") ? "Sell Breakdown":  (stringmomentum_W == "Downtrend" and stringmomentum_D == "Downtrend" and stringmomentum_4H == "Downtrend") ? "Wait to Sell After pullback from 4H Re-Dis Base" :  (stringmomentum_W == "Re-Dis" and stringmomentum_D == "Uptrend" and stringmomentum_4H == "Uptrend") ? "Wait to Buy After pullback from 4H Re-Acc Base": (stringmomentum_W == "Re-Dis" and stringmomentum_D == "Uptrend" and stringmomentum_4H == "Re-Acc") ? "Buy Breakout": (stringmomentum_W == "Re-Dis" and stringmomentum_D == "Re-Acc" and stringmomentum_4H == "Downtrend") ? "Wait to Sell After setup 4H Re-Dis Base":na ,text_color=color.rgb(2, 2, 2),text_size=table_text_size, bgcolor=color.new(close_4H>MA1_4H and close_4H>MA2_4H and MA1_4H > MA2_4H ? cell_phase1 : (close_4H<MA1_4H  and close_4H>MA2_4H  and MA1_4H >MA2_4H ) ? cell_phase2 : (close_4H<MA1_4H and close_4H<MA2_4H and MA1_4H > MA2_4H ) ?cell_phase3 :(close_4H < MA1_4H  and close_4H < MA2_4H  and MA1_4H < MA2_4H ) ? cell_phase4:(close_4H > MA1_4H  and close_4H <MA2_4H  and MA1_4H <MA2_4H ) ? cell_phase5:(close_4H > MA1_4H and close_4H  > MA2_4H  and MA1_4H <MA2_4H ) ? cell_phase6:col_col,cell_transp))
+        table.merge_cells(t,2,5,4,5)
 //---- Display data code end ----//
 //End dahs board
 
